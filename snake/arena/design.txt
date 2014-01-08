@@ -1,0 +1,29 @@
+type Coords struct {
+	X, Y int
+}
+
+type Snake struct {
+	[]Coords
+	Heading
+	Size
+}
+
+type State struct {
+	Snakes []Snake
+}
+
+Arena.AddSnake(x, y, direction, length int) index int
+Arena.State() struct{
+	Snakes []Snake,
+	Points []Coords,
+	Size Coords
+}
+
+Arena.Tick()
+
+v1.0:
+	1. Make a single-player extremely simple snake game.
+	2. Don't care about optimizations, multiplayer or forward-compatibitity
+v2.0:
+	1. Add multi-player
+	2. refactor heavily
