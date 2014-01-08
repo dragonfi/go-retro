@@ -6,11 +6,11 @@ import (
 )
 
 func TestArenaCreation(t *testing.T) {
-	MakeArena(t, 40, 20)
-	MakeArena(t, 50, 30)
+	makeArena(t, 40, 20)
+	makeArena(t, 50, 30)
 }
 
-func MakeArena(t *testing.T, width, height int) arena.Arena {
+func makeArena(t *testing.T, width, height int) arena.Arena {
 	a := arena.New(width, height)
 	state := a.State()
 	if state.Size.X != width || state.Size.Y != height {
@@ -49,7 +49,7 @@ func testSnakeState(t *testing.T, initial arena.Snake, direction arena.Direction
 func TestSnakeMovement(t *testing.T) {
 	const width = 40
 	const height = 20
-	a := MakeArena(t, width, height)
+	a := makeArena(t, width, height)
 	var initial = a
 	initial_snake := a.Snake
 	t.Log( initial_snake.Segment[0].X)
