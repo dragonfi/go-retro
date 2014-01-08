@@ -1,5 +1,7 @@
 package arena
 
+import "math/rand"
+
 type Arena interface {
 	State() State
 	Tick()
@@ -20,8 +22,9 @@ type Position struct {
 }
 
 type State struct {
-	Size  Position
-	Snake Snake
+	Size      Position
+	Snake     Snake
+	PointItem Position
 }
 
 type Snake struct {
@@ -50,37 +53,75 @@ func (s *Snake) moveHead() {
 	}
 }
 
-func (s *Snake) moveBody() {
+func (s *Snake) extrudeBody() {
+	s.Segments = s.Segments[:len(s.Segments)+1]
 	for i := len(s.Segments) - 1; i > 0; i-- {
 		s.Segments[i] = s.Segments[i-1]
 	}
 }
 
-func (s *Snake) move() {
-	s.moveBody()
+func (s *Snake) contractBody() {
+	s.Segments = s.Segments[:len(s.Segments)-1]
+}
+
+func (s *Snake) extrude() {
+	s.extrudeBody()
 	s.moveHead()
 }
 
 type arena struct {
-	size  Position
-	snake Snake
+	size      Position
+	snake     Snake
+	pointItem Position
 }
 
 func (a arena) State() State {
 	segments := make([]Position, len(a.snake.Segments))
 	copy(segments, a.snake.Segments)
-	return State{Size: a.size, Snake: Snake{Segments: segments, Heading: a.snake.Heading}}
+	snake := Snake{Segments: segments, Heading: a.snake.Heading}
+	return State{Size: a.size, Snake: snake, PointItem: a.pointItem}
 }
 
 func (a *arena) Tick() {
-	a.snake.move()
+	a.snake.extrude()
+	if a.snake.Head() == a.pointItem {
+		a.setRandomPositionForPointItem()
+	} else {
+		a.snake.contractBody()
+	}
 }
 
 func (a *arena) SetSnakeHeading(h Direction) {
 	a.snake.Heading = h
 }
 
-func newSnake(x, y int, heading Direction, size int) Snake {
+func (a arena) isValidPointItemPosition(p Position) bool {
+	if p.X < 0 || p.X >= a.size.X {
+		return false
+	}
+	if p.Y < 0 || p.Y >= a.size.Y {
+		return false
+	}
+	for _, segment := range a.snake.Segments {
+		if segment == p {
+			return false
+		}
+	}
+	return true
+}
+
+func (a *arena) setRandomPositionForPointItem() {
+	for counter := 0; counter < 1000; counter++ {
+		newPointItem := Position{rand.Intn(a.size.X), rand.Intn(a.size.Y)}
+		if a.isValidPointItemPosition(newPointItem) {
+			a.pointItem = newPointItem
+			return
+		}
+	}
+	panic("Cannot find a place to put point item. Maybe I should see if there are places available at all...")
+}
+
+func newSnake(x, y int, size int) Snake {
 	segments := make([]Position, size, size*10)
 	s := Snake{Segments: segments}
 	for i := 0; i < size; i++ {
@@ -90,7 +131,7 @@ func newSnake(x, y int, heading Direction, size int) Snake {
 }
 
 func New(width, height int) Arena {
-	s := newSnake(width/2, height/2, EAST, 5)
+	s := newSnake(width/2, height/2, 5)
 	a := arena{size: Position{width, height}, snake: s}
 	return &a
 }
