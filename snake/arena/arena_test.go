@@ -57,7 +57,7 @@ func testSnakeMovementBody(t *testing.T, initial, s Snake) {
 	}
 }
 
-func testSnakeMovement(t *testing.T, a Arena, direction Direction) {
+func testMoveSnake(t *testing.T, a Arena, direction Direction) {
 	initial := a.State().Snake
 	a.SetSnakeHeading(direction)
 	a.Tick()
@@ -70,6 +70,22 @@ func testSnakeMovement(t *testing.T, a Arena, direction Direction) {
 	}
 	testSnakeMovementHead(t, initial, direction, s)
 	testSnakeMovementBody(t, initial, s)
+
+}
+func testSnakeMovement(t *testing.T, a Arena, direction Direction) {
+	testMoveSnake(t, a, direction)
+	s := a.State()
+	if s.GameIsOver {
+		t.Error("Game should not have ended yet. Head position:", s.Snake.Head())
+	}
+}
+
+func testSnakeMovementCausesGameOver(t * testing.T, a Arena, direction Direction) {
+	testMoveSnake(t, a, direction)
+	s := a.State()
+	if !s.GameIsOver {
+		t.Error("Game should have ended. Head position:", s.Snake.Head())
+	}
 }
 
 func testSnakeLength(t *testing.T, size int) {
@@ -94,8 +110,25 @@ func TestSnakeMovement(t *testing.T) {
 	testSnakeMovement(t, a, NORTH)
 	testSnakeMovement(t, a, WEST)
 	testSnakeMovement(t, a, SOUTH)
-	//testSnakeMovementHitWallAndDie(t, a, EAST)
-	//testSnakeMovementHitSelfAndDie(t, a, EAST)
+}
+
+func TestSnakeMovementHitSelfAndGameOver(t *testing.T) {
+	a := makeArena(t, 40, 20)
+	testSnakeMovement(t, a, EAST)
+	testSnakeMovement(t, a, SOUTH)
+	testSnakeMovement(t, a, WEST)
+	testSnakeMovementCausesGameOver(t, a, NORTH)
+}
+
+func TestSnakeMovementHitWallAndGameOver(t *testing.T) {
+	width, height := 40, 20
+	a := makeArena(t, width, height)
+	iterations := width - 1 - a.State().Snake.Head().X
+	for i:=0; i<iterations; i++ {
+		testSnakeMovement(t, a, EAST)
+	}
+	testSnakeMovementCausesGameOver(t, a, EAST)
+
 }
 
 func TestState(t *testing.T) {
@@ -178,4 +211,14 @@ func TestInvalidPointItemPositionsOnSnake(t *testing.T) {
 			t.Error("Point item position should be invalid:", position)
 		}
 	}
+}
+
+func TestPutPointItemToFirstFreePositionWhenArenaIsNearlyFull(t *testing.T) {
+	// generate a huge snake
+	// put point item at first available position
+}
+
+func TestDeclareGameOverWhenCannotPlaceMorePointItems(t *testing.T) {
+	// generate a world-filling snake
+	// put point item at first available position
 }
