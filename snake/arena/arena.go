@@ -172,15 +172,27 @@ func (a arena) isValidPointItemPosition(p Position) bool {
 	return true
 }
 
-func (a *arena) setRandomPositionForPointItem() {
-	for counter := 0; counter < 1000; counter++ {
-		newPointItem := Position{rand.Intn(a.size.X), rand.Intn(a.size.Y)}
-		if a.isValidPointItemPosition(newPointItem) {
-			a.pointItem = newPointItem
-			return
+func (a arena) getValidPositions() []Position {
+	valid_positions := make([]Position, 0, a.size.X*a.size.Y)
+	for i := 0; i<a.size.X; i++ {
+		for j := 0; j<a.size.Y; j++ {
+			p := Position{i, j}
+			if a.isValidPointItemPosition(p) {
+				valid_positions = append(valid_positions, p)
+			}
 		}
 	}
-	panic("Cannot find a place to put point item. Maybe I should see if there are places available at all...")
+	return valid_positions
+
+}
+
+func (a *arena) setRandomPositionForPointItem() {
+	valid_positions := a.getValidPositions()
+	if len(valid_positions) == 0 {
+		a.endGame()
+	} else {
+		a.pointItem = valid_positions[rand.Intn(len(valid_positions))]
+	}
 }
 
 func newSnake(x, y int, size int) Snake {

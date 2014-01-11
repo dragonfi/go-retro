@@ -218,14 +218,15 @@ func TestInvalidPointItemPositionsOnSnake(t *testing.T) {
 	}
 }
 
-func TestPutPointItemToFirstFreePositionWhenArenaIsNearlyFull(t *testing.T) {
-	// generate a huge snake
-	// put point item at first available position
-}
-
 func TestDeclareGameOverWhenCannotPlaceMorePointItems(t *testing.T) {
-	// generate a world-filling snake
-	// put point item at first available position
+	a := makeArena(t, 2, 1).(*arena)
+	h := a.snake.Head()
+	a.pointItem = Position{h.X+1, h.Y}
+	a.Tick()
+	state := a.State()
+	if !state.GameIsOver {
+		t.Error("Game should have ended.")
+	}
 }
 
 func TestSnakesAreEqual(t *testing.T) {
