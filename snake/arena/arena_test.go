@@ -138,3 +138,44 @@ func TestSnakeMovementEatPointItemAndGrow(t *testing.T) {
 	testSnakeMovementHead(t, initial, EAST, s)
 	testSnakeMovementBody(t, initial, s)
 }
+
+func TestValidPointItemPositions(t *testing.T) {
+	width := 40
+	height := 20
+	a := makeArena(t, width, height).(*arena)
+	valid_positions := []Position {
+		{0, 0}, {0, height-1}, {width-1, 0}, {width-1, height-1},
+		{1, 1}, {21, 15}, {17, 18},
+	}
+	for _, position := range valid_positions {
+		if !a.isValidPointItemPosition(position) {
+			t.Error("Point item position should be valid:", position)
+		}
+	}
+}
+
+func TestInvalidPointItemPositionsOutOfBounds(t *testing.T) {
+	width := 40
+	height := 20
+	a := makeArena(t, width, height).(*arena)
+	invalid_positions := []Position {
+		{-1, 0}, {0, -1}, {width, 0}, {0, width}, {width, height},
+		{-54, -36}, {-32, 100}, {-32, 11}, {11, -30},
+	}
+	for _, position := range invalid_positions {
+		if a.isValidPointItemPosition(position) {
+			t.Error("Point item position should be invalid:", position)
+		}
+	}
+}
+
+func TestInvalidPointItemPositionsOnSnake(t *testing.T) {
+	width := 40
+	height := 20
+	a := makeArena(t, width, height).(*arena)
+	for _, position := range a.snake.Segments {
+		if a.isValidPointItemPosition(position) {
+			t.Error("Point item position should be invalid:", position)
+		}
+	}
+}
