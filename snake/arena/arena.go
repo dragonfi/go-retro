@@ -22,15 +22,46 @@ type Position struct {
 }
 
 type State struct {
-	Size      Position
-	Snake     Snake
-	PointItem Position
-	GameIsOver  bool
+	Size       Position
+	Snake      Snake
+	PointItem  Position
+	GameIsOver bool
+}
+
+func (s State) Equal(other State) bool {
+	if s.Size != other.Size {
+		return false
+	}
+	if !s.Snake.Equal(other.Snake) {
+		return false
+	}
+	if s.GameIsOver != other.GameIsOver {
+		return false
+	}
+	if s.PointItem != other.PointItem {
+		return false
+	}
+	return true
 }
 
 type Snake struct {
 	Segments []Position
 	Heading  Direction
+}
+
+func (s Snake) Equal(other Snake) bool {
+	if s.Heading != other.Heading {
+		return false
+	}
+	if s.Length() != other.Length() {
+		return false
+	}
+	for i := range s.Segments {
+		if s.Segments[i] != other.Segments[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func (s Snake) Head() Position {
@@ -71,9 +102,9 @@ func (s *Snake) extrude() {
 }
 
 type arena struct {
-	size      Position
-	snake     Snake
-	pointItem Position
+	size       Position
+	snake      Snake
+	pointItem  Position
 	gameIsOver bool
 }
 
@@ -105,6 +136,9 @@ func (a *arena) endGame() {
 }
 
 func (a *arena) Tick() {
+	if a.gameIsOver {
+		return
+	}
 	a.snake.extrude()
 	if a.snake.Head() == a.pointItem {
 		a.setRandomPositionForPointItem()

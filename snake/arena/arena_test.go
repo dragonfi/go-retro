@@ -80,11 +80,17 @@ func testSnakeMovement(t *testing.T, a Arena, direction Direction) {
 	}
 }
 
-func testSnakeMovementCausesGameOver(t * testing.T, a Arena, direction Direction) {
+func testSnakeMovementCausesGameOver(t *testing.T, a Arena, direction Direction) {
 	testMoveSnake(t, a, direction)
 	s := a.State()
 	if !s.GameIsOver {
 		t.Error("Game should have ended. Head position:", s.Snake.Head())
+	}
+	old_state := s
+	a.Tick()
+	s = a.State()
+	if !s.Equal(old_state) {
+		t.Error("Game should not proceed further after game over.")
 	}
 }
 
@@ -124,11 +130,10 @@ func TestSnakeMovementHitWallAndGameOver(t *testing.T) {
 	width, height := 40, 20
 	a := makeArena(t, width, height)
 	iterations := width - 1 - a.State().Snake.Head().X
-	for i:=0; i<iterations; i++ {
+	for i := 0; i < iterations; i++ {
 		testSnakeMovement(t, a, EAST)
 	}
 	testSnakeMovementCausesGameOver(t, a, EAST)
-
 }
 
 func TestState(t *testing.T) {
@@ -176,8 +181,8 @@ func TestValidPointItemPositions(t *testing.T) {
 	width := 40
 	height := 20
 	a := makeArena(t, width, height).(*arena)
-	valid_positions := []Position {
-		{0, 0}, {0, height-1}, {width-1, 0}, {width-1, height-1},
+	valid_positions := []Position{
+		{0, 0}, {0, height - 1}, {width - 1, 0}, {width - 1, height - 1},
 		{1, 1}, {21, 15}, {17, 18},
 	}
 	for _, position := range valid_positions {
@@ -191,7 +196,7 @@ func TestInvalidPointItemPositionsOutOfBounds(t *testing.T) {
 	width := 40
 	height := 20
 	a := makeArena(t, width, height).(*arena)
-	invalid_positions := []Position {
+	invalid_positions := []Position{
 		{-1, 0}, {0, -1}, {width, 0}, {0, width}, {width, height},
 		{-54, -36}, {-32, 100}, {-32, 11}, {11, -30},
 	}
@@ -221,4 +226,93 @@ func TestPutPointItemToFirstFreePositionWhenArenaIsNearlyFull(t *testing.T) {
 func TestDeclareGameOverWhenCannotPlaceMorePointItems(t *testing.T) {
 	// generate a world-filling snake
 	// put point item at first available position
+}
+
+func TestSnakesAreEqual(t *testing.T) {
+	s1, s2 := makeSnakes()
+	if !s1.Equal(s2) {
+		t.Error("Snakes should not differ.")
+	}
+}
+
+func TestSnakesDifferInSegment(t *testing.T) {
+	s1, s2 := makeSnakes()
+	s2.Segments[4] = Position{0, 0}
+	assertSnakesDiffer(t, s1, s2)
+}
+
+func TestSnakesDifferInSize(t *testing.T) {
+	s1, s2 := makeSnakes()
+	s2.Segments = append(s2.Segments, Position{0, 0})
+	assertSnakesDiffer(t, s1, s2)
+}
+
+func TestSnakesDifferInHeading(t *testing.T) {
+	s1, s2 := makeSnakes()
+	s2.Heading = NORTH
+	assertSnakesDiffer(t, s1, s2)
+}
+
+func makeSnakes() (Snake, Snake) {
+	x, y, size := 10, 15, 5
+	return newSnake(x, y, size), newSnake(x, y, size)
+}
+
+func assertSnakesDiffer(t *testing.T, s1, s2 Snake) {
+	if s1.Equal(s2) {
+		t.Error("Snakes should differ:", s1, s2)
+	}
+}
+
+func TestStatesAreEqual(t *testing.T) {
+	s1, s2 := makeStates(t)
+	if !s1.Equal(s2) {
+		t.Error("States should not differ:", s1, s2)
+	}
+}
+
+func TestStatesDifferInSize(t *testing.T) {
+	s1, s2 := makeStates(t)
+
+	s2.Size.X += 1
+	assertStatesDiffer(t, s1, s2)
+
+	s2.Size.X = s1.Size.X
+	s2.Size.Y -= 1
+	assertStatesDiffer(t, s1, s2)
+}
+
+func TestStatesDifferInGameOverFlag(t *testing.T) {
+	s1, s2 := makeStates(t)
+	s2.GameIsOver = true
+	assertStatesDiffer(t, s1, s2)
+}
+
+func TestStatesDifferInPointItemPosition(t *testing.T) {
+	s1, s2 := makeStates(t)
+
+	s2.PointItem.X += 1
+	assertStatesDiffer(t, s1, s2)
+
+	s2.PointItem.X = s1.PointItem.X
+	s2.PointItem.Y += 1
+	assertStatesDiffer(t, s1, s2)
+}
+
+func TestStatesDifferInSnakes(t *testing.T) {
+	s1, s2 := makeStates(t)
+	s2.Snake.Heading = NORTH
+	assertStatesDiffer(t, s1, s2)
+}
+
+func makeStates(t *testing.T) (State, State) {
+	x, y := 30, 15
+	a := makeArena(t, x, y)
+	return a.State(), a.State()
+}
+
+func assertStatesDiffer(t *testing.T, s1, s2 State) {
+	if s1.Equal(s2) {
+		t.Error("States should differ:", s1, s2)
+	}
 }
