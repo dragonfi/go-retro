@@ -29,7 +29,7 @@ func makeArena(t *testing.T, width, height int) Arena {
 	return a
 }
 
-func testSnakeMovementHead(t *testing.T, initial Snake, direction Direction, s Snake) {
+func checkSnakeMovementHead(t *testing.T, initial Snake, direction Direction, s Snake) {
 	initial_head := initial.Head()
 	h := s.Head()
 	var dx, dy int
@@ -49,7 +49,7 @@ func testSnakeMovementHead(t *testing.T, initial Snake, direction Direction, s S
 	}
 }
 
-func testSnakeMovementBody(t *testing.T, initial, s Snake) {
+func checkSnakeMovementBody(t *testing.T, initial, s Snake) {
 	for i := 1; i < len(s.Segments); i++ {
 		if s.Segments[i] != initial.Segments[i-1] {
 			t.Error("Wrong segment at position:", i, "segment:", s.Segments[i], "expected:", initial.Segments[i-1])
@@ -57,7 +57,7 @@ func testSnakeMovementBody(t *testing.T, initial, s Snake) {
 	}
 }
 
-func testMoveSnake(t *testing.T, a Arena, direction Direction) {
+func moveSnake(t *testing.T, a Arena, direction Direction) {
 	initial := a.State().Snake
 	a.SetSnakeHeading(direction)
 	a.Tick()
@@ -68,12 +68,12 @@ func testMoveSnake(t *testing.T, a Arena, direction Direction) {
 	if s.Length() != initial.Length() {
 		t.Error("Wrong snake size: Expected:", initial.Length(), "Got:", s.Length())
 	}
-	testSnakeMovementHead(t, initial, direction, s)
-	testSnakeMovementBody(t, initial, s)
-
+	checkSnakeMovementHead(t, initial, direction, s)
+	checkSnakeMovementBody(t, initial, s)
 }
+
 func testSnakeMovement(t *testing.T, a Arena, direction Direction) {
-	testMoveSnake(t, a, direction)
+	moveSnake(t, a, direction)
 	s := a.State()
 	if s.GameIsOver {
 		t.Error("Game should not have ended yet. Head position:", s.Snake.Head())
@@ -81,7 +81,7 @@ func testSnakeMovement(t *testing.T, a Arena, direction Direction) {
 }
 
 func testSnakeMovementCausesGameOver(t *testing.T, a Arena, direction Direction) {
-	testMoveSnake(t, a, direction)
+	moveSnake(t, a, direction)
 	s := a.State()
 	if !s.GameIsOver {
 		t.Error("Game should have ended. Head position:", s.Snake.Head())
@@ -94,7 +94,7 @@ func testSnakeMovementCausesGameOver(t *testing.T, a Arena, direction Direction)
 	}
 }
 
-func testSnakeLength(t *testing.T, size int) {
+func checkSnakeLength(t *testing.T, size int) {
 	s := newSnake(0, 0, size)
 	if s.Length() != len(s.Segments) || false {
 		t.Error("Snake.Length returns wrong size: Expected:", len(s.Segments), "Got:", s.Length())
@@ -102,11 +102,11 @@ func testSnakeLength(t *testing.T, size int) {
 }
 
 func TestSnakeLength(t *testing.T) {
-	testSnakeLength(t, 3)
-	testSnakeLength(t, 4)
-	testSnakeLength(t, 5)
-	testSnakeLength(t, 10)
-	testSnakeLength(t, 100)
+	checkSnakeLength(t, 3)
+	checkSnakeLength(t, 4)
+	checkSnakeLength(t, 5)
+	checkSnakeLength(t, 10)
+	checkSnakeLength(t, 100)
 }
 
 func TestSnakeMovement(t *testing.T) {
@@ -139,6 +139,9 @@ func TestSnakeMovementHitWallAndGameOver(t *testing.T) {
 func TestState(t *testing.T) {
 	a := makeArena(t, 40, 20).(*arena)
 	s := a.State()
+	if s.GameIsOver != a.gameIsOver {
+		t.Fail()
+	}
 	if s.PointItem != a.pointItem {
 		t.Fail()
 	}
@@ -152,6 +155,10 @@ func TestState(t *testing.T) {
 	}
 	if s.Size != a.size {
 		t.Fail()
+	}
+	s.Snake.Segments[0] = Position{30, 30}
+	if s.Snake.Segments[0] == a.snake.Segments[0] {
+		t.Error("Returned state should not be able to modify original data.")
 	}
 }
 
@@ -173,55 +180,14 @@ func TestSnakeMovementEatPointItemAndGrow(t *testing.T) {
 	if s.Head() == a.State().PointItem {
 		t.Error("Point item is not eaten correctly:", a.State().PointItem)
 	}
-	testSnakeMovementHead(t, initial, EAST, s)
-	testSnakeMovementBody(t, initial, s)
-}
-
-func TestValidPointItemPositions(t *testing.T) {
-	width := 40
-	height := 20
-	a := makeArena(t, width, height).(*arena)
-	valid_positions := []Position{
-		{0, 0}, {0, height - 1}, {width - 1, 0}, {width - 1, height - 1},
-		{1, 1}, {21, 15}, {17, 18},
-	}
-	for _, position := range valid_positions {
-		if !a.isValidPointItemPosition(position) {
-			t.Error("Point item position should be valid:", position)
-		}
-	}
-}
-
-func TestInvalidPointItemPositionsOutOfBounds(t *testing.T) {
-	width := 40
-	height := 20
-	a := makeArena(t, width, height).(*arena)
-	invalid_positions := []Position{
-		{-1, 0}, {0, -1}, {width, 0}, {0, width}, {width, height},
-		{-54, -36}, {-32, 100}, {-32, 11}, {11, -30},
-	}
-	for _, position := range invalid_positions {
-		if a.isValidPointItemPosition(position) {
-			t.Error("Point item position should be invalid:", position)
-		}
-	}
-}
-
-func TestInvalidPointItemPositionsOnSnake(t *testing.T) {
-	width := 40
-	height := 20
-	a := makeArena(t, width, height).(*arena)
-	for _, position := range a.snake.Segments {
-		if a.isValidPointItemPosition(position) {
-			t.Error("Point item position should be invalid:", position)
-		}
-	}
+	checkSnakeMovementHead(t, initial, EAST, s)
+	checkSnakeMovementBody(t, initial, s)
 }
 
 func TestDeclareGameOverWhenCannotPlaceMorePointItems(t *testing.T) {
 	a := makeArena(t, 2, 1).(*arena)
 	h := a.snake.Head()
-	a.pointItem = Position{h.X+1, h.Y}
+	a.pointItem = Position{h.X + 1, h.Y}
 	a.Tick()
 	state := a.State()
 	if !state.GameIsOver {
@@ -315,5 +281,46 @@ func makeStates(t *testing.T) (State, State) {
 func assertStatesDiffer(t *testing.T, s1, s2 State) {
 	if s1.Equal(s2) {
 		t.Error("States should differ:", s1, s2)
+	}
+}
+
+func TestValidPointItemPositions(t *testing.T) {
+	width := 40
+	height := 20
+	a := makeArena(t, width, height).(*arena)
+	valid_positions := []Position{
+		{0, 0}, {0, height - 1}, {width - 1, 0}, {width - 1, height - 1},
+		{1, 1}, {21, 15}, {17, 18},
+	}
+	for _, position := range valid_positions {
+		if !a.isValidPointItemPosition(position) {
+			t.Error("Point item position should be valid:", position)
+		}
+	}
+}
+
+func TestInvalidPointItemPositionsOutOfBounds(t *testing.T) {
+	width := 40
+	height := 20
+	a := makeArena(t, width, height).(*arena)
+	invalid_positions := []Position{
+		{-1, 0}, {0, -1}, {width, 0}, {0, width}, {width, height},
+		{-54, -36}, {-32, 100}, {-32, 11}, {11, -30},
+	}
+	for _, position := range invalid_positions {
+		if a.isValidPointItemPosition(position) {
+			t.Error("Point item position should be invalid:", position)
+		}
+	}
+}
+
+func TestInvalidPointItemPositionsOnSnake(t *testing.T) {
+	width := 40
+	height := 20
+	a := makeArena(t, width, height).(*arena)
+	for _, position := range a.snake.Segments {
+		if a.isValidPointItemPosition(position) {
+			t.Error("Point item position should be invalid:", position)
+		}
 	}
 }

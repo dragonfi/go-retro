@@ -174,8 +174,8 @@ func (a arena) isValidPointItemPosition(p Position) bool {
 
 func (a arena) getValidPositions() []Position {
 	valid_positions := make([]Position, 0, a.size.X*a.size.Y)
-	for i := 0; i<a.size.X; i++ {
-		for j := 0; j<a.size.Y; j++ {
+	for i := 0; i < a.size.X; i++ {
+		for j := 0; j < a.size.Y; j++ {
 			p := Position{i, j}
 			if a.isValidPointItemPosition(p) {
 				valid_positions = append(valid_positions, p)
