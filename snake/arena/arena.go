@@ -207,5 +207,6 @@ func newSnake(x, y int, size int) Snake {
 func New(width, height int) Arena {
 	s := newSnake(width/2, height/2, 5)
 	a := arena{size: Position{width, height}, snake: s}
+	a.setRandomPositionForPointItem()
 	return &a
 }
