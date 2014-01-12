@@ -1,12 +1,16 @@
 package main
 
 import (
-	"./arena"
 	"fmt"
+	"github.com/dragonfi/go-retro/snake/arena"
+	"github.com/nsf/termbox-go"
 	"math/rand"
 	"time"
-	"github.com/nsf/termbox-go"
 )
+
+type Position struct {
+	X, Y int
+}
 
 func putString(x, y int, s string) {
 	for i, r := range s {
@@ -14,27 +18,86 @@ func putString(x, y int, s string) {
 	}
 }
 
-func draw(ox, oy int, s arena.State) {
-	str := fmt.Sprintf("Score: %d", len(s.Snake.Segments))
-	putString(ox+1, oy+1, str)
-	for i := -1; i<=s.Size.X; i++ {
-		for j := -1; j<=s.Size.Y; j++ {
+type ArenaWidget struct {
+	arena  arena.Arena
+	offset Position
+	size   Position
+	state  arena.State
+}
+
+func (w *ArenaWidget) Tick() {
+	w.arena.Tick()
+	w.state = w.arena.State()
+}
+
+func (w *ArenaWidget) SetSnakeHeading(direction arena.Direction) {
+	w.arena.SetSnakeHeading(direction)
+}
+
+func (w ArenaWidget) setCell(x, y int, r rune, fg, bg termbox.Attribute) {
+	termbox.SetCell(w.offset.X+x, w.offset.Y+y, r, fg, bg)
+}
+
+func (w ArenaWidget) putString(x, y int, str string) {
+	putString(w.offset.X+x, w.offset.Y+y, str)
+}
+
+func (w ArenaWidget) drawBorder() {
+	s := w.state
+	for i := -1; i <= s.Size.X; i++ {
+		for j := -1; j <= s.Size.Y; j++ {
 			if i == -1 || i == s.Size.X || j == -1 || j == s.Size.Y {
-				termbox.SetCell(ox+i, oy+j, '#', 0, 0)
+				w.setCell(i, j, '#', 0, 0)
 			}
 		}
 	}
-	for _, p := range s.Snake.Segments {
-		termbox.SetCell(ox+p.X, oy+p.Y, '#', 0, 0)
-	}
-	p := s.PointItem
-	termbox.SetCell(ox+p.X, oy+p.Y, '*', 0, 0)
-	if s.GameIsOver {
-		putString(ox+s.Size.X/2 - 8, oy+s.Size.Y/2-2, "   Game Over  ")
-		putString(ox+s.Size.X/2 - 8, oy+s.Size.Y/2+0, "Enter: Restart")
-		putString(ox+s.Size.X/2 - 8, oy+s.Size.Y/2+1, "ESC: Exit")
-	}
+}
 
+func (w ArenaWidget) drawSnake() {
+	for _, p := range w.state.Snake.Segments {
+		w.setCell(p.X, p.Y, '#', 0, 0)
+	}
+}
+
+func (w ArenaWidget) drawPointItem() {
+	p := w.state.PointItem
+	w.setCell(p.X, p.Y, '*', 0, 0)
+}
+
+func (w ArenaWidget) putGameOverText() {
+	s := w.state
+	w.putString(s.Size.X/2-9, s.Size.Y/2-3, "##################")
+	w.putString(s.Size.X/2-9, s.Size.Y/2-2, "#    Game Over   #")
+	w.putString(s.Size.X/2-9, s.Size.Y/2-1, "#                #")
+	w.putString(s.Size.X/2-9, s.Size.Y/2+0, "# Enter: Restart #")
+	w.putString(s.Size.X/2-9, s.Size.Y/2+1, "# ESC: Exit      #")
+	w.putString(s.Size.X/2-9, s.Size.Y/2+2, "##################")
+}
+
+func (w ArenaWidget) putScore() {
+	s := w.state
+	w.putString(1, 1, fmt.Sprintf("Score: %d", len(s.Snake.Segments)))
+}
+
+func (w ArenaWidget) Draw() {
+	s := w.arena.State()
+	w.drawBorder()
+	w.putScore()
+	w.drawSnake()
+	w.drawPointItem()
+	if s.GameIsOver {
+		w.putGameOverText()
+	}
+}
+
+func (w *ArenaWidget) ResetArena() {
+	w.arena = arena.New(w.size.X, w.size.Y)
+}
+
+func NewArenaWidget(ox, oy, x, y int) ArenaWidget {
+	w := ArenaWidget{offset: Position{ox, oy}, size: Position{x, y}}
+	w.ResetArena()
+	return w
 }
 
 func eventChannel() <-chan termbox.Event {
@@ -53,27 +116,26 @@ func main() {
 	defer termbox.Close()
 	x, y := termbox.Size()
 	offsetx, offsety := 2, 2
-	ax, ay := x - 2*offsetx, y - 2*offsety
-	a := arena.New(ax, ay)
-	tick := time.Tick(100*time.Millisecond)
+	aw := NewArenaWidget(offsetx, offsety, x-2*offsetx, y-2*offsety)
+	tick := time.Tick(100 * time.Millisecond)
 	event := eventChannel()
 	running := true
 
-	handleKey := map[termbox.Key]func() {
-		termbox.KeyEsc: func(){running = false},
-		termbox.KeyEnter: func(){a = arena.New(ax, ay)},
-		termbox.KeyArrowRight: func(){a.SetSnakeHeading(arena.EAST)},
-		termbox.KeyArrowUp: func(){a.SetSnakeHeading(arena.NORTH)},
-		termbox.KeyArrowLeft: func(){a.SetSnakeHeading(arena.WEST)},
-		termbox.KeyArrowDown: func(){a.SetSnakeHeading(arena.SOUTH)},
+	handleKey := map[termbox.Key]func(){
+		termbox.KeyEsc:        func() { running = false },
+		termbox.KeyEnter:      func() { aw.ResetArena() },
+		termbox.KeyArrowRight: func() { aw.SetSnakeHeading(arena.EAST) },
+		termbox.KeyArrowUp:    func() { aw.SetSnakeHeading(arena.NORTH) },
+		termbox.KeyArrowLeft:  func() { aw.SetSnakeHeading(arena.WEST) },
+		termbox.KeyArrowDown:  func() { aw.SetSnakeHeading(arena.SOUTH) },
 	}
 
 	for running {
 		termbox.Clear(0, 0)
-		draw(offsetx, offsety, a.State())
+		aw.Draw()
 		termbox.Flush()
 		select {
-		case ev:=<-event:
+		case ev := <-event:
 			if ev.Type == termbox.EventKey {
 				f := handleKey[ev.Key]
 				if f != nil {
@@ -81,7 +143,7 @@ func main() {
 				}
 			}
 		case <-tick:
-			a.Tick()
+			aw.Tick()
 		}
 	}
 }
