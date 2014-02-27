@@ -8,14 +8,14 @@ import (
 	"time"
 )
 
-type Position struct {
-	X, Y int
-}
-
 func putString(x, y int, s string) {
 	for i, r := range s {
 		termbox.SetCell(x+i, y, r, 0, 0)
 	}
+}
+
+type Position struct {
+	X, Y int
 }
 
 type ArenaWidget struct {
@@ -80,12 +80,11 @@ func (w ArenaWidget) putScore() {
 }
 
 func (w ArenaWidget) Draw() {
-	s := w.arena.State()
 	w.drawBorder()
 	w.putScore()
 	w.drawSnake()
 	w.drawPointItem()
-	if s.GameIsOver {
+	if w.state.GameIsOver {
 		w.putGameOverText()
 	}
 }

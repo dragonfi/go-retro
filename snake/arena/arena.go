@@ -101,6 +101,12 @@ func (s *Snake) extrude() {
 	s.moveHead()
 }
 
+func (s Snake) Copy() Snake {
+	segments := make([]Position, len(s.Segments))
+	copy(segments, s.Segments)
+	return Snake{Segments: segments, Heading: s.Heading}
+}
+
 type arena struct {
 	size       Position
 	snake      Snake
@@ -109,10 +115,12 @@ type arena struct {
 }
 
 func (a arena) State() State {
-	segments := make([]Position, len(a.snake.Segments))
-	copy(segments, a.snake.Segments)
-	snake := Snake{Segments: segments, Heading: a.snake.Heading}
-	return State{Size: a.size, Snake: snake, PointItem: a.pointItem, GameIsOver: a.gameIsOver}
+	return State{
+		Size:       a.size,
+		Snake:      a.snake.Copy(),
+		PointItem:  a.pointItem,
+		GameIsOver: a.gameIsOver,
+	}
 }
 
 func inSequence(p Position, sequence []Position) bool {
