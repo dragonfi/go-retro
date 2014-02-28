@@ -15,18 +15,28 @@ func makeArena(t *testing.T, width, height int) Arena {
 	if state.Size.X != width || state.Size.Y != height {
 		t.Error("Wrong width or height. Expected:", width, height, "Got:", state.Size.X, state.Size.Y)
 	}
-	s := state.Snakes[0]
-	if s.Heading != EAST {
+	type snakeParams struct {
+		x, y, size int
+		heading Direction
+	}
+	addSnake(t, a, width/2, height/2, 5, EAST)
+	return a
+}
+
+func addSnake(t *testing.T, a Arena, x, y, size int, heading Direction) {
+	a.AddSnake(x, y, size, heading)
+	state := a.State()
+	s := state.Snakes[len(state.Snakes)-1]
+	if s.Heading != heading {
 		t.Error("Wrong direction!")
 	}
-	if s.Length() != 5 || len(s.Segments) != 5 {
-		t.Error("Wrong snake size: Expected:", 5, "Got:", s.Length())
+	if s.Length() != size || len(s.Segments) != size {
+		t.Error("Wrong snake size: Expected:", size, "Got:", s.Length())
 	}
 	h := s.Head()
-	if h.X != width/2 || h.Y != height/2 {
-		t.Error("Wrong position for snake head: Expected:", width/2, height/2, "Got:", h.X, h.Y)
+	if h.X != x || h.Y != y {
+		t.Error("Wrong position for snake head: Expected:", x, y, "Got:", h.X, h.Y)
 	}
-	return a
 }
 
 func checkSnakeMovementHead(t *testing.T, initial Snake, direction Direction, s Snake) {

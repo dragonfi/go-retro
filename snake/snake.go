@@ -98,6 +98,7 @@ func (w ArenaWidget) Draw() {
 
 func (w *ArenaWidget) ResetArena() {
 	w.arena = arena.New(w.size.X, w.size.Y)
+	w.arena.AddSnake(w.size.X/2, w.size.Y/2, 5, arena.EAST)
 }
 
 func NewArenaWidget(ox, oy, x, y int) ArenaWidget {

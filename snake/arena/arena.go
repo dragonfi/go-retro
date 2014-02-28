@@ -6,6 +6,7 @@ type Arena interface {
 	State() State
 	Tick()
 	SetSnakeHeading(h Direction)
+	AddSnake(x, y, size int, h Direction)
 }
 
 type Direction int
@@ -205,6 +206,13 @@ func (a *arena) setRandomPositionForPointItem() {
 	}
 }
 
+func (a* arena) AddSnake(x, y, size int, heading Direction) {
+	if heading != EAST {
+		panic("Other headings are not implemented.")
+	}
+	a.snake = newSnake(x, y, size)
+}
+
 func newSnake(x, y int, size int) Snake {
 	segments := make([]Position, size, size*10)
 	s := Snake{Segments: segments}
@@ -220,3 +228,4 @@ func New(width, height int) Arena {
 	a.setRandomPositionForPointItem()
 	return &a
 }
+
