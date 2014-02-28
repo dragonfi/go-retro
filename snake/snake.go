@@ -53,8 +53,13 @@ func (w ArenaWidget) drawBorder() {
 	}
 }
 
-func (w ArenaWidget) drawSnake() {
-	for _, p := range w.state.Snake.Segments {
+func (w ArenaWidget) drawSnakes() {
+	for _, snake := range w.state.Snakes {
+		w.drawSnake(snake)
+	}
+}
+func (w ArenaWidget) drawSnake(snake arena.Snake) {
+	for _, p := range snake.Segments {
 		w.setCell(p.X, p.Y, '#', 0, 0)
 	}
 }
@@ -76,13 +81,15 @@ func (w ArenaWidget) putGameOverText() {
 
 func (w ArenaWidget) putScore() {
 	s := w.state
-	w.putString(1, 1, fmt.Sprintf("Score: %d", len(s.Snake.Segments)))
+	for i, snake := range s.Snakes {
+		w.putString(1, 1+i, fmt.Sprintf("Score: %d", len(snake.Segments)))
+	}
 }
 
 func (w ArenaWidget) Draw() {
 	w.drawBorder()
 	w.putScore()
-	w.drawSnake()
+	w.drawSnakes()
 	w.drawPointItem()
 	if w.state.GameIsOver {
 		w.putGameOverText()

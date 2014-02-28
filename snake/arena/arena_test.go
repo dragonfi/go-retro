@@ -15,7 +15,7 @@ func makeArena(t *testing.T, width, height int) Arena {
 	if state.Size.X != width || state.Size.Y != height {
 		t.Error("Wrong width or height. Expected:", width, height, "Got:", state.Size.X, state.Size.Y)
 	}
-	s := state.Snake
+	s := state.Snakes[0]
 	if s.Heading != EAST {
 		t.Error("Wrong direction!")
 	}
@@ -58,10 +58,10 @@ func checkSnakeMovementBody(t *testing.T, initial, s Snake) {
 }
 
 func moveSnake(t *testing.T, a Arena, direction Direction) {
-	initial := a.State().Snake
+	initial := a.State().Snakes[0]
 	a.SetSnakeHeading(direction)
 	a.Tick()
-	s := a.State().Snake
+	s := a.State().Snakes[0]
 	if s.Heading != direction {
 		t.Error("Wrong direction!")
 	}
@@ -76,7 +76,7 @@ func testSnakeMovement(t *testing.T, a Arena, direction Direction) {
 	moveSnake(t, a, direction)
 	s := a.State()
 	if s.GameIsOver {
-		t.Error("Game should not have ended yet. Head position:", s.Snake.Head())
+		t.Error("Game should not have ended yet. Head position:", s.Snakes[0].Head())
 	}
 }
 
@@ -84,7 +84,7 @@ func testSnakeMovementCausesGameOver(t *testing.T, a Arena, direction Direction)
 	moveSnake(t, a, direction)
 	s := a.State()
 	if !s.GameIsOver {
-		t.Error("Game should have ended. Head position:", s.Snake.Head())
+		t.Error("Game should have ended. Head position:", s.Snakes[0].Head())
 	}
 	old_state := s
 	a.Tick()
@@ -129,7 +129,7 @@ func TestSnakeMovementHitSelfAndGameOver(t *testing.T) {
 func TestSnakeMovementHitWallAndGameOver(t *testing.T) {
 	width, height := 40, 20
 	a := makeArena(t, width, height)
-	iterations := width - 1 - a.State().Snake.Head().X
+	iterations := width - 1 - a.State().Snakes[0].Head().X
 	for i := 0; i < iterations; i++ {
 		testSnakeMovement(t, a, EAST)
 	}
@@ -145,32 +145,32 @@ func TestState(t *testing.T) {
 	if s.PointItem != a.pointItem {
 		t.Fail()
 	}
-	if s.Snake.Heading != a.snake.Heading {
+	if s.Snakes[0].Heading != a.snake.Heading {
 		t.Fail()
 	}
-	for i := range s.Snake.Segments {
-		if s.Snake.Segments[i] != a.snake.Segments[i] {
+	for i := range s.Snakes[0].Segments {
+		if s.Snakes[0].Segments[i] != a.snake.Segments[i] {
 			t.Fail()
 		}
 	}
 	if s.Size != a.size {
 		t.Fail()
 	}
-	s.Snake.Segments[0] = Position{30, 30}
-	if s.Snake.Segments[0] == a.snake.Segments[0] {
+	s.Snakes[0].Segments[0] = Position{30, 30}
+	if s.Snakes[0].Segments[0] == a.snake.Segments[0] {
 		t.Error("Returned state should not be able to modify original data.")
 	}
 }
 
 func TestSnakeMovementEatPointItemAndGrow(t *testing.T) {
 	a := makeArena(t, 40, 20)
-	initial := a.State().Snake
+	initial := a.State().Snakes[0]
 
 	a.(*arena).pointItem = Position{initial.Head().X + 1, initial.Head().Y}
 	a.SetSnakeHeading(EAST)
 
 	a.Tick()
-	s := a.State().Snake
+	s := a.State().Snakes[0]
 	if s.Heading != EAST {
 		t.Error("Wrong direction!")
 	}
@@ -268,7 +268,7 @@ func TestStatesDifferInPointItemPosition(t *testing.T) {
 
 func TestStatesDifferInSnakes(t *testing.T) {
 	s1, s2 := makeStates(t)
-	s2.Snake.Heading = NORTH
+	s2.Snakes[0].Heading = NORTH
 	assertStatesDiffer(t, s1, s2)
 }
 

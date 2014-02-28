@@ -23,7 +23,7 @@ type Position struct {
 
 type State struct {
 	Size       Position
-	Snake      Snake
+	Snakes     []Snake
 	PointItem  Position
 	GameIsOver bool
 }
@@ -32,7 +32,7 @@ func (s State) Equal(other State) bool {
 	if s.Size != other.Size {
 		return false
 	}
-	if !s.Snake.Equal(other.Snake) {
+	if !s.Snakes[0].Equal(other.Snakes[0]) {
 		return false
 	}
 	if s.GameIsOver != other.GameIsOver {
@@ -115,9 +115,11 @@ type arena struct {
 }
 
 func (a arena) State() State {
+	snakes := make([]Snake, 1, 1)
+	snakes[0] = a.snake.Copy()
 	return State{
 		Size:       a.size,
-		Snake:      a.snake.Copy(),
+		Snakes:     snakes,
 		PointItem:  a.pointItem,
 		GameIsOver: a.gameIsOver,
 	}
