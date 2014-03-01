@@ -186,7 +186,7 @@ func (a *arena) Tick() {
 }
 
 func (a *arena) SetSnakeHeading(snake int, h Direction) {
-	a.snakes[0].Heading = h
+	a.snakes[snake].Heading = h
 }
 
 func (a arena) isValidPlacementPosition(p Position) bool {
