@@ -30,8 +30,8 @@ func (w *ArenaWidget) Tick() {
 	w.state = w.arena.State()
 }
 
-func (w *ArenaWidget) SetSnakeHeading(direction arena.Direction) {
-	w.arena.SetSnakeHeading(0, direction)
+func (w *ArenaWidget) SetSnakeHeading(snake int, direction arena.Direction) {
+	w.arena.SetSnakeHeading(snake, direction)
 }
 
 func (w ArenaWidget) setCell(x, y int, r rune, fg, bg termbox.Attribute) {
@@ -99,6 +99,7 @@ func (w ArenaWidget) Draw() {
 func (w *ArenaWidget) ResetArena() {
 	w.arena = arena.New(w.size.X, w.size.Y)
 	w.arena.AddSnake(w.size.X/2, w.size.Y/2, 5, arena.EAST)
+	w.arena.AddSnake(w.size.X/3, w.size.Y/3, 5, arena.EAST)
 }
 
 func NewArenaWidget(ox, oy, x, y int) ArenaWidget {
@@ -131,10 +132,21 @@ func main() {
 	handleKey := map[termbox.Key]func(){
 		termbox.KeyEsc:        func() { running = false },
 		termbox.KeyEnter:      func() { aw.ResetArena() },
-		termbox.KeyArrowRight: func() { aw.SetSnakeHeading(arena.EAST) },
-		termbox.KeyArrowUp:    func() { aw.SetSnakeHeading(arena.NORTH) },
-		termbox.KeyArrowLeft:  func() { aw.SetSnakeHeading(arena.WEST) },
-		termbox.KeyArrowDown:  func() { aw.SetSnakeHeading(arena.SOUTH) },
+		termbox.KeyArrowRight: func() { aw.SetSnakeHeading(0, arena.EAST) },
+		termbox.KeyArrowUp:    func() { aw.SetSnakeHeading(0, arena.NORTH) },
+		termbox.KeyArrowLeft:  func() { aw.SetSnakeHeading(0, arena.WEST) },
+		termbox.KeyArrowDown:  func() { aw.SetSnakeHeading(0, arena.SOUTH) },
+	}
+
+	handleCh := map[rune]func(){
+		'D': func() { aw.SetSnakeHeading(1, arena.EAST) },
+		'W': func() { aw.SetSnakeHeading(1, arena.NORTH) },
+		'A': func() { aw.SetSnakeHeading(1, arena.WEST) },
+		'S': func() { aw.SetSnakeHeading(1, arena.SOUTH) },
+		'd': func() { aw.SetSnakeHeading(1, arena.EAST) },
+		'w': func() { aw.SetSnakeHeading(1, arena.NORTH) },
+		'a': func() { aw.SetSnakeHeading(1, arena.WEST) },
+		's': func() { aw.SetSnakeHeading(1, arena.SOUTH) },
 	}
 
 	for running {
@@ -144,7 +156,10 @@ func main() {
 		select {
 		case ev := <-event:
 			if ev.Type == termbox.EventKey {
-				f := handleKey[ev.Key]
+				f := handleCh[ev.Ch]
+				if ev.Ch == 0 {
+					f = handleKey[ev.Key]
+				}
 				if f != nil {
 					f()
 				}
