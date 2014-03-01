@@ -25,7 +25,7 @@ func makeArena(t *testing.T, width, height int) Arena {
 
 func addSnake(t *testing.T, a Arena, x, y, size int, heading Direction) {
 	old := a.State()
-	a.AddSnake(x, y, size, heading)
+	index, _ := a.AddSnake(x, y, size, heading)
 	state := a.State()
 	for i := range old.Snakes {
 		if !state.Snakes[i].Equal(old.Snakes[i]) {
@@ -35,7 +35,10 @@ func addSnake(t *testing.T, a Arena, x, y, size int, heading Direction) {
 	if len(state.Snakes) != len(old.Snakes)+1 {
 		t.Error("New Snake is not appended correctly to Snakes.")
 	}
-	s := state.Snakes[len(state.Snakes)-1]
+	if index != len(state.Snakes)-1 {
+		t.Error("AddSnake returns wrong index.")
+	}
+	s := state.Snakes[index]
 	if s.Heading != heading {
 		t.Error("Wrong direction!")
 	}
@@ -76,6 +79,7 @@ func checkSnakeMovementBody(t *testing.T, initial, s Snake) {
 	}
 }
 
+// TODO: implement for all snakes
 func moveSnake(t *testing.T, a Arena, direction Direction) {
 	initial := a.State().Snakes[0]
 	a.SetSnakeHeading(direction)
@@ -114,7 +118,7 @@ func testSnakeMovementCausesGameOver(t *testing.T, a Arena, direction Direction)
 }
 
 func checkSnakeLength(t *testing.T, size int) {
-	s := newSnake(0, 0, size)
+	s := newSnake(0, 0, size, EAST)
 	if s.Length() != len(s.Segments) || false {
 		t.Error("Snake.Length returns wrong size: Expected:", len(s.Segments), "Got:", s.Length())
 	}
@@ -164,12 +168,15 @@ func TestState(t *testing.T) {
 	if s.PointItem != a.pointItem {
 		t.Fail()
 	}
-	if s.Snakes[0].Heading != a.snakes[0].Heading {
-		t.Fail()
-	}
-	for i := range s.Snakes[0].Segments {
-		if s.Snakes[0].Segments[i] != a.snakes[0].Segments[i] {
+	for i, state_snake := range s.Snakes {
+		arena_snake := a.snakes[i]
+		if state_snake.Heading != arena_snake.Heading {
 			t.Fail()
+		}
+		for j := range state_snake.Segments {
+			if state_snake.Segments[j] != arena_snake.Segments[j] {
+				t.Fail()
+			}
 		}
 	}
 	if s.Size != a.size {
@@ -240,8 +247,8 @@ func TestSnakesDifferInHeading(t *testing.T) {
 }
 
 func makeSnakes() (Snake, Snake) {
-	x, y, size := 10, 15, 5
-	return newSnake(x, y, size), newSnake(x, y, size)
+	x, y, size, heading := 10, 15, 5, EAST
+	return newSnake(x, y, size, heading), newSnake(x, y, size, heading)
 }
 
 func assertSnakesDiffer(t *testing.T, s1, s2 Snake) {
@@ -312,7 +319,7 @@ func TestValidPointItemPositions(t *testing.T) {
 		{1, 1}, {21, 15}, {17, 18},
 	}
 	for _, position := range valid_positions {
-		if !a.isValidPointItemPosition(position) {
+		if !a.isValidPlacementPosition(position) {
 			t.Error("Point item position should be valid:", position)
 		}
 	}
@@ -327,19 +334,58 @@ func TestInvalidPointItemPositionsOutOfBounds(t *testing.T) {
 		{-54, -36}, {-32, 100}, {-32, 11}, {11, -30},
 	}
 	for _, position := range invalid_positions {
-		if a.isValidPointItemPosition(position) {
+		if a.isValidPlacementPosition(position) {
 			t.Error("Point item position should be invalid:", position)
 		}
 	}
 }
 
-func TestInvalidPointItemPositionsOnSnake(t *testing.T) {
+func TestInvalidPointItemPositionsOnSnakes(t *testing.T) {
 	width := 40
 	height := 20
 	a := makeArena(t, width, height).(*arena)
-	for _, position := range a.snakes[0].Segments {
-		if a.isValidPointItemPosition(position) {
-			t.Error("Point item position should be invalid:", position)
+	for _, snake := range a.State().Snakes {
+		for _, position := range snake.Segments {
+			if a.isValidPlacementPosition(position) {
+				t.Error("Point item position should be invalid:", position)
+			}
 		}
+	}
+}
+
+func TestNewSnakeHeadCannotBeAtInvalidPosition(t *testing.T) {
+	width, height := 40, 20
+	a := makeArena(t, width, height)
+	a.AddSnake(20, 10, 5, EAST)
+	i, err := a.AddSnake(20, 10, 5, EAST)
+	if i != -1 || err == nil {
+		t.Error("Same snake head position should be invalid.")
+	}
+	i, err = a.AddSnake(19, 10, 5, EAST)
+	if i != -1 || err == nil {
+		t.Error("Snake head position inside other snake should be invalid.")
+	}
+	i, err = a.AddSnake(21, 10, 5, EAST)
+	if i != -1 || err == nil {
+		t.Error("Placing new segment on another snake's head should be invalid.")
+	}
+	i, err = a.AddSnake(-1, 10, 5, EAST)
+	if i != -1 || err == nil {
+		t.Error("Placing snake head outside arena boundary should be invalid.")
+	}
+	i, err = a.AddSnake(10, -1, 5, EAST)
+	if i != -1 || err == nil {
+		t.Error("Placing snake head outside arena boundary should be invalid.")
+	}
+	i, err = a.AddSnake(width+1, 10, 5, EAST)
+	if i != -1 || err == nil {
+		t.Error("Placing snake head outside arena boundary should be invalid.")
+	}
+	i, err = a.AddSnake(3, height+1, 5, EAST)
+	if i != -1 || err == nil {
+		t.Error("Placing snake head outside arena boundary should be invalid.")
+	}
+	if len(a.State().Snakes) != 1 {
+		t.Error("Bad snakes should not be added at all.")
 	}
 }

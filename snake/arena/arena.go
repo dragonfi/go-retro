@@ -1,12 +1,15 @@
 package arena
 
-import "math/rand"
+import (
+	"math/rand"
+	"errors"
+)
 
 type Arena interface {
 	State() State
 	Tick()
 	SetSnakeHeading(h Direction)
-	AddSnake(x, y, size int, h Direction)
+	AddSnake(x, y, size int, h Direction) (snake int, err error)
 }
 
 type Direction int
@@ -176,7 +179,7 @@ func (a *arena) SetSnakeHeading(h Direction) {
 	a.snakes[0].Heading = h
 }
 
-func (a arena) isValidPointItemPosition(p Position) bool {
+func (a arena) isValidPlacementPosition(p Position) bool {
 	if p.X < 0 || p.X >= a.size.X {
 		return false
 	}
@@ -196,7 +199,7 @@ func (a arena) getValidPositions() []Position {
 	for i := 0; i < a.size.X; i++ {
 		for j := 0; j < a.size.Y; j++ {
 			p := Position{i, j}
-			if a.isValidPointItemPosition(p) {
+			if a.isValidPlacementPosition(p) {
 				valid_positions = append(valid_positions, p)
 			}
 		}
@@ -214,14 +217,26 @@ func (a *arena) setRandomPositionForPointItem() {
 	}
 }
 
-func (a* arena) AddSnake(x, y, size int, heading Direction) {
-	if heading != EAST {
-		panic("Other headings are not implemented.")
+func (a* arena) AddSnake(x, y, size int, heading Direction) (int, error) {
+	if !a.isValidPlacementPosition(Position{x, y}) {
+		return -1, errors.New("Invalid position for snake head.")
 	}
-	a.snakes = append(a.snakes, newSnake(x, y, size))
+	for _, snake := range a.snakes {
+		if !a.isValidPlacementPosition(snake.Head()) {
+			return -1, errors.New("Snake segment makes another snake head position invalid.")
+		}
+	}
+	a.snakes = append(a.snakes, newSnake(x, y, size, heading))
+	return len(a.snakes) - 1, nil
 }
 
-func newSnake(x, y int, size int) Snake {
+func newSnake(x, y ,size int, heading Direction) Snake {
+	if heading != EAST {
+		panic("TODO: Other headings are not implemented.")
+	}
+	if size < 0 {
+		panic("Size should be positive.")
+	}
 	segments := make([]Position, size, size*10)
 	s := Snake{Segments: segments}
 	for i := 0; i < size; i++ {
