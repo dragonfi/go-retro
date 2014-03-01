@@ -183,8 +183,10 @@ func (a arena) isValidPointItemPosition(p Position) bool {
 	if p.Y < 0 || p.Y >= a.size.Y {
 		return false
 	}
-	if inSequence(p, a.snakes[0].Segments) {
-		return false
+	for _, snake := range a.snakes {
+		if inSequence(p, snake.Segments) {
+			return false
+		}
 	}
 	return true
 }
@@ -230,8 +232,6 @@ func newSnake(x, y int, size int) Snake {
 
 func New(width, height int) Arena {
 	a := arena{size: Position{width, height}}
-	a.AddSnake(width/2, height/2, 5, EAST)
 	a.setRandomPositionForPointItem()
 	return &a
 }
-
