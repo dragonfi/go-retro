@@ -32,6 +32,8 @@ type State struct {
 	GameIsOver bool
 }
 
+// TODO: consider providing deep Copy for state.
+
 func (s State) Equal(other State) bool {
 	if s.Size != other.Size {
 		return false
