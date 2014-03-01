@@ -108,16 +108,16 @@ func moveSnakes(t *testing.T, a Arena, directions ...Direction) {
 	}
 }
 
-func testSnakeMovement(t *testing.T, a Arena, direction Direction) {
-	moveSnakes(t, a, direction)
+func testSnakeMovement(t *testing.T, a Arena, directions ...Direction) {
+	moveSnakes(t, a, directions...)
 	s := a.State()
 	if s.GameIsOver {
 		t.Error("Game should not have ended yet. Head position:", s.Snakes[0].Head())
 	}
 }
 
-func testSnakeMovementCausesGameOver(t *testing.T, a Arena, direction Direction) {
-	moveSnakes(t, a, direction)
+func testSnakeMovementCausesGameOver(t *testing.T, a Arena, directions ...Direction) {
+	moveSnakes(t, a, directions...)
 	s := a.State()
 	if !s.GameIsOver {
 		t.Error("Game should have ended. Head position:", s.Snakes[0].Head())
@@ -175,11 +175,11 @@ func TestSnakeMovementHitWallAndGameOver(t *testing.T) {
 func TestSnakeMovementForTwoSnakes(t *testing.T) {
 	a := makeArena(t, 40, 20)
 	addSnake(t, a, 30, 15, 5, EAST)
-	testSnakeMovement(t, a, EAST)
-	testSnakeMovement(t, a, NORTH)
-	testSnakeMovement(t, a, NORTH)
-	testSnakeMovement(t, a, WEST)
-	testSnakeMovement(t, a, SOUTH)
+	testSnakeMovement(t, a, EAST, EAST)
+	testSnakeMovement(t, a, NORTH, SOUTH)
+	testSnakeMovement(t, a, NORTH, SOUTH)
+	testSnakeMovement(t, a, WEST, WEST)
+	testSnakeMovement(t, a, SOUTH, NORTH)
 }
 
 func TestState(t *testing.T) {
