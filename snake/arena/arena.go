@@ -110,17 +110,23 @@ func (s Snake) Copy() Snake {
 
 type arena struct {
 	size       Position
-	snake      Snake
+	snakes     []Snake
 	pointItem  Position
 	gameIsOver bool
 }
 
+func (a arena) copySnakes() []Snake {
+	snakes := make([]Snake, len(a.snakes))
+	for i, snake := range a.snakes {
+		snakes[i] = snake.Copy()
+	}
+	return snakes
+}
+
 func (a arena) State() State {
-	snakes := make([]Snake, 1, 1)
-	snakes[0] = a.snake.Copy()
 	return State{
 		Size:       a.size,
-		Snakes:     snakes,
+		Snakes:     a.copySnakes(),
 		PointItem:  a.pointItem,
 		GameIsOver: a.gameIsOver,
 	}
@@ -150,24 +156,24 @@ func (a *arena) Tick() {
 	if a.gameIsOver {
 		return
 	}
-	a.snake.extrude()
-	if a.snake.Head() == a.pointItem {
+	a.snakes[0].extrude()
+	if a.snakes[0].Head() == a.pointItem {
 		a.setRandomPositionForPointItem()
 	} else {
-		a.snake.contractBody()
+		a.snakes[0].contractBody()
 	}
 
-	if inSequence(a.snake.Head(), a.snake.Segments[1:]) {
+	if inSequence(a.snakes[0].Head(), a.snakes[0].Segments[1:]) {
 		a.endGame()
 	}
 
-	if !a.insideArena(a.snake.Head()) {
+	if !a.insideArena(a.snakes[0].Head()) {
 		a.endGame()
 	}
 }
 
 func (a *arena) SetSnakeHeading(h Direction) {
-	a.snake.Heading = h
+	a.snakes[0].Heading = h
 }
 
 func (a arena) isValidPointItemPosition(p Position) bool {
@@ -177,7 +183,7 @@ func (a arena) isValidPointItemPosition(p Position) bool {
 	if p.Y < 0 || p.Y >= a.size.Y {
 		return false
 	}
-	if inSequence(p, a.snake.Segments) {
+	if inSequence(p, a.snakes[0].Segments) {
 		return false
 	}
 	return true
@@ -210,7 +216,7 @@ func (a* arena) AddSnake(x, y, size int, heading Direction) {
 	if heading != EAST {
 		panic("Other headings are not implemented.")
 	}
-	a.snake = newSnake(x, y, size)
+	a.snakes = append(a.snakes, newSnake(x, y, size))
 }
 
 func newSnake(x, y int, size int) Snake {
@@ -223,8 +229,8 @@ func newSnake(x, y int, size int) Snake {
 }
 
 func New(width, height int) Arena {
-	s := newSnake(width/2, height/2, 5)
-	a := arena{size: Position{width, height}, snake: s}
+	a := arena{size: Position{width, height}}
+	a.AddSnake(width/2, height/2, 5, EAST)
 	a.setRandomPositionForPointItem()
 	return &a
 }

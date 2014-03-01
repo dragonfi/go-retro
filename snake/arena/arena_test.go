@@ -24,8 +24,17 @@ func makeArena(t *testing.T, width, height int) Arena {
 }
 
 func addSnake(t *testing.T, a Arena, x, y, size int, heading Direction) {
+	old := a.State()
 	a.AddSnake(x, y, size, heading)
 	state := a.State()
+	for i := range old.Snakes {
+		if !state.Snakes[i].Equal(old.Snakes[i]) {
+			t.Error("Old snakes are not preserved.")
+		}
+	}
+	if len(state.Snakes) != len(old.Snakes)+1 {
+		t.Error("New Snake is not appended correctly to Snakes.")
+	}
 	s := state.Snakes[len(state.Snakes)-1]
 	if s.Heading != heading {
 		t.Error("Wrong direction!")
@@ -155,11 +164,11 @@ func TestState(t *testing.T) {
 	if s.PointItem != a.pointItem {
 		t.Fail()
 	}
-	if s.Snakes[0].Heading != a.snake.Heading {
+	if s.Snakes[0].Heading != a.snakes[0].Heading {
 		t.Fail()
 	}
 	for i := range s.Snakes[0].Segments {
-		if s.Snakes[0].Segments[i] != a.snake.Segments[i] {
+		if s.Snakes[0].Segments[i] != a.snakes[0].Segments[i] {
 			t.Fail()
 		}
 	}
@@ -167,7 +176,7 @@ func TestState(t *testing.T) {
 		t.Fail()
 	}
 	s.Snakes[0].Segments[0] = Position{30, 30}
-	if s.Snakes[0].Segments[0] == a.snake.Segments[0] {
+	if s.Snakes[0].Segments[0] == a.snakes[0].Segments[0] {
 		t.Error("Returned state should not be able to modify original data.")
 	}
 }
@@ -196,7 +205,7 @@ func TestSnakeMovementEatPointItemAndGrow(t *testing.T) {
 
 func TestDeclareGameOverWhenCannotPlaceMorePointItems(t *testing.T) {
 	a := makeArena(t, 2, 1).(*arena)
-	h := a.snake.Head()
+	h := a.snakes[0].Head()
 	a.pointItem = Position{h.X + 1, h.Y}
 	a.Tick()
 	state := a.State()
@@ -328,7 +337,7 @@ func TestInvalidPointItemPositionsOnSnake(t *testing.T) {
 	width := 40
 	height := 20
 	a := makeArena(t, width, height).(*arena)
-	for _, position := range a.snake.Segments {
+	for _, position := range a.snakes[0].Segments {
 		if a.isValidPointItemPosition(position) {
 			t.Error("Point item position should be invalid:", position)
 		}
