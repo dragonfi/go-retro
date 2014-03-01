@@ -25,7 +25,10 @@ func makeArena(t *testing.T, width, height int) Arena {
 
 func addSnake(t *testing.T, a Arena, x, y, size int, heading Direction) {
 	old := a.State()
-	index, _ := a.AddSnake(x, y, size, heading)
+	index, err := a.AddSnake(x, y, size, heading)
+	if err != nil {
+		panic(err)
+	}
 	state := a.State()
 	for i := range old.Snakes {
 		if !state.Snakes[i].Equal(old.Snakes[i]) {
@@ -79,24 +82,34 @@ func checkSnakeMovementBody(t *testing.T, initial, s Snake) {
 	}
 }
 
-// TODO: implement for all snakes
-func moveSnake(t *testing.T, a Arena, direction Direction) {
-	initial := a.State().Snakes[0]
-	a.SetSnakeHeading(direction)
+func moveSnakes(t *testing.T, a Arena, directions ...Direction) {
+	if len(directions) > len(a.State().Snakes) {
+		panic("Error in test: more direction arguments than snakes.")
+	}
+	initial_snakes := a.State().Snakes
+	for i, dir := range directions {
+		a.SetSnakeHeading(i, dir)
+	}
 	a.Tick()
-	s := a.State().Snakes[0]
-	if s.Heading != direction {
-		t.Error("Wrong direction!")
+	for i, s := range a.State().Snakes {
+		initial := initial_snakes[i]
+		direction := initial.Heading
+		if i < len(directions) {
+			direction = directions[i]
+		}
+		if s.Heading != direction {
+			t.Error("Wrong direction!")
+		}
+		if s.Length() != initial.Length() {
+			t.Error("Wrong snake size: Expected:", initial.Length(), "Got:", s.Length())
+		}
+		checkSnakeMovementHead(t, initial, direction, s)
+		checkSnakeMovementBody(t, initial, s)
 	}
-	if s.Length() != initial.Length() {
-		t.Error("Wrong snake size: Expected:", initial.Length(), "Got:", s.Length())
-	}
-	checkSnakeMovementHead(t, initial, direction, s)
-	checkSnakeMovementBody(t, initial, s)
 }
 
 func testSnakeMovement(t *testing.T, a Arena, direction Direction) {
-	moveSnake(t, a, direction)
+	moveSnakes(t, a, direction)
 	s := a.State()
 	if s.GameIsOver {
 		t.Error("Game should not have ended yet. Head position:", s.Snakes[0].Head())
@@ -104,7 +117,7 @@ func testSnakeMovement(t *testing.T, a Arena, direction Direction) {
 }
 
 func testSnakeMovementCausesGameOver(t *testing.T, a Arena, direction Direction) {
-	moveSnake(t, a, direction)
+	moveSnakes(t, a, direction)
 	s := a.State()
 	if !s.GameIsOver {
 		t.Error("Game should have ended. Head position:", s.Snakes[0].Head())
@@ -159,6 +172,16 @@ func TestSnakeMovementHitWallAndGameOver(t *testing.T) {
 	testSnakeMovementCausesGameOver(t, a, EAST)
 }
 
+func TestSnakeMovementForTwoSnakes(t *testing.T) {
+	a := makeArena(t, 40, 20)
+	addSnake(t, a, 30, 15, 5, EAST)
+	testSnakeMovement(t, a, EAST)
+	testSnakeMovement(t, a, NORTH)
+	testSnakeMovement(t, a, NORTH)
+	testSnakeMovement(t, a, WEST)
+	testSnakeMovement(t, a, SOUTH)
+}
+
 func TestState(t *testing.T) {
 	a := makeArena(t, 40, 20).(*arena)
 	s := a.State()
@@ -193,7 +216,7 @@ func TestSnakeMovementEatPointItemAndGrow(t *testing.T) {
 	initial := a.State().Snakes[0]
 
 	a.(*arena).pointItem = Position{initial.Head().X + 1, initial.Head().Y}
-	a.SetSnakeHeading(EAST)
+	a.SetSnakeHeading(0, EAST)
 
 	a.Tick()
 	s := a.State().Snakes[0]
@@ -389,3 +412,4 @@ func TestNewSnakeHeadCannotBeAtInvalidPosition(t *testing.T) {
 		t.Error("Bad snakes should not be added at all.")
 	}
 }
+

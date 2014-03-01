@@ -8,7 +8,7 @@ import (
 type Arena interface {
 	State() State
 	Tick()
-	SetSnakeHeading(h Direction)
+	SetSnakeHeading(snake int, h Direction)
 	AddSnake(x, y, size int, h Direction) (snake int, err error)
 }
 
@@ -126,6 +126,7 @@ func (a arena) copySnakes() []Snake {
 	return snakes
 }
 
+// TODO: Refactor to use State internally
 func (a arena) State() State {
 	return State{
 		Size:       a.size,
@@ -159,23 +160,32 @@ func (a *arena) Tick() {
 	if a.gameIsOver {
 		return
 	}
-	a.snakes[0].extrude()
-	if a.snakes[0].Head() == a.pointItem {
-		a.setRandomPositionForPointItem()
-	} else {
-		a.snakes[0].contractBody()
-	}
+	for id := range a.snakes {
+		snake := &a.snakes[id]
+		snake.extrude()
+		if snake.Head() == a.pointItem {
+			a.setRandomPositionForPointItem()
+		} else {
+			snake.contractBody()
+		}
 
-	if inSequence(a.snakes[0].Head(), a.snakes[0].Segments[1:]) {
-		a.endGame()
-	}
+		for other_id, other_snake := range a.snakes {
+			if inSequence(snake.Head(), other_snake.Segments) {
+				if id != other_id {
+					a.endGame()
+				} else if inSequence(snake.Head(), other_snake.Segments[1:]) {
+					a.endGame()
+				}
+			}
+		}
 
-	if !a.insideArena(a.snakes[0].Head()) {
-		a.endGame()
+		if !a.insideArena(snake.Head()) {
+			a.endGame()
+		}
 	}
 }
 
-func (a *arena) SetSnakeHeading(h Direction) {
+func (a *arena) SetSnakeHeading(snake int, h Direction) {
 	a.snakes[0].Heading = h
 }
 
@@ -221,12 +231,13 @@ func (a* arena) AddSnake(x, y, size int, heading Direction) (int, error) {
 	if !a.isValidPlacementPosition(Position{x, y}) {
 		return -1, errors.New("Invalid position for snake head.")
 	}
+	new_snake := newSnake(x, y, size, heading)
 	for _, snake := range a.snakes {
-		if !a.isValidPlacementPosition(snake.Head()) {
+		if inSequence(snake.Head(), new_snake.Segments) {
 			return -1, errors.New("Snake segment makes another snake head position invalid.")
 		}
 	}
-	a.snakes = append(a.snakes, newSnake(x, y, size, heading))
+	a.snakes = append(a.snakes, new_snake)
 	return len(a.snakes) - 1, nil
 }
 

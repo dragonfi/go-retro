@@ -31,7 +31,7 @@ func (w *ArenaWidget) Tick() {
 }
 
 func (w *ArenaWidget) SetSnakeHeading(direction arena.Direction) {
-	w.arena.SetSnakeHeading(direction)
+	w.arena.SetSnakeHeading(0, direction)
 }
 
 func (w ArenaWidget) setCell(x, y int, r rune, fg, bg termbox.Attribute) {
