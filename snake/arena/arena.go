@@ -187,7 +187,26 @@ func (a *arena) Tick() {
 	}
 }
 
+func isOpposingDirections(h1, h2 Direction) bool {
+	if (h1 == EAST && h2 == WEST) {
+		return true
+	}
+	if (h1 == WEST && h2 == EAST) {
+		return true
+	}
+	if (h1 == NORTH && h2 == SOUTH) {
+		return true
+	}
+	if (h1 == SOUTH && h2 == NORTH) {
+		return true
+	}
+	return false
+}
+
 func (a *arena) SetSnakeHeading(snake int, h Direction) {
+	if isOpposingDirections(a.snakes[snake].Heading, h) {
+		return
+	}
 	a.snakes[snake].Heading = h
 }
 

@@ -413,3 +413,26 @@ func TestNewSnakeHeadCannotBeAtInvalidPosition(t *testing.T) {
 	}
 }
 
+func TestReverseMotionSuicideInvalid (t *testing.T) {
+	a := makeArena(t, 40, 20)
+	testSnakeMovement(t, a, EAST)
+	a.SetSnakeHeading(0, WEST)
+	a.Tick()
+	testSnakeMovement(t, a, EAST)
+
+	testSnakeMovement(t, a, NORTH)
+	a.SetSnakeHeading(0, SOUTH)
+	a.Tick()
+	testSnakeMovement(t, a, NORTH)
+
+	testSnakeMovement(t, a, WEST)
+	a.SetSnakeHeading(0, EAST)
+	a.Tick()
+	testSnakeMovement(t, a, WEST)
+
+	testSnakeMovement(t, a, SOUTH)
+	a.SetSnakeHeading(0, NORTH)
+	a.Tick()
+	testSnakeMovement(t, a, SOUTH)
+}
+
