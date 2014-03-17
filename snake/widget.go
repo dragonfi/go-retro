@@ -78,7 +78,7 @@ func (w ArenaWidget) putGameOverText() {
 func (w ArenaWidget) putScore() {
 	s := w.state
 	for i, snake := range s.Snakes {
-		w.putString(1, 1+i, fmt.Sprintf("Score: %d", len(snake.Segments)))
+		w.putString(1, 1+i, fmt.Sprintf("Player %d: %d", i+1, len(snake.Segments)))
 	}
 }
 
