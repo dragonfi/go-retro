@@ -1,8 +1,8 @@
 package arena
 
 import (
-	"math/rand"
 	"errors"
+	"math/rand"
 )
 
 type Arena interface {
@@ -48,6 +48,23 @@ func (s State) Equal(other State) bool {
 		return false
 	}
 	return true
+}
+
+func (s State) Copy() State {
+	return State{
+		Size:       s.Size,
+		Snakes:     s.copySnakes(),
+		PointItem:  s.PointItem,
+		GameIsOver: s.GameIsOver,
+	}
+}
+
+func (s State) copySnakes() []Snake {
+	snakes := make([]Snake, len(s.Snakes))
+	for i, snake := range s.Snakes {
+		snakes[i] = snake.Copy()
+	}
+	return snakes
 }
 
 type Snake struct {
@@ -114,28 +131,11 @@ func (s Snake) Copy() Snake {
 }
 
 type arena struct {
-	size       Position
-	snakes     []Snake
-	pointItem  Position
-	gameIsOver bool
+	s State
 }
 
-func (a arena) copySnakes() []Snake {
-	snakes := make([]Snake, len(a.snakes))
-	for i, snake := range a.snakes {
-		snakes[i] = snake.Copy()
-	}
-	return snakes
-}
-
-// TODO: Refactor to use State internally
 func (a arena) State() State {
-	return State{
-		Size:       a.size,
-		Snakes:     a.copySnakes(),
-		PointItem:  a.pointItem,
-		GameIsOver: a.gameIsOver,
-	}
+	return a.s.Copy()
 }
 
 func inSequence(p Position, sequence []Position) bool {
@@ -148,30 +148,30 @@ func inSequence(p Position, sequence []Position) bool {
 }
 
 func (a arena) insideArena(p Position) bool {
-	if p.X < 0 || p.X >= a.size.X || p.Y < 0 || p.Y >= a.size.Y {
+	if p.X < 0 || p.X >= a.s.Size.X || p.Y < 0 || p.Y >= a.s.Size.Y {
 		return false
 	}
 	return true
 }
 
 func (a *arena) endGame() {
-	a.gameIsOver = true
+	a.s.GameIsOver = true
 }
 
 func (a *arena) Tick() {
-	if a.gameIsOver {
+	if a.s.GameIsOver {
 		return
 	}
-	for id := range a.snakes {
-		snake := &a.snakes[id]
+	for id := range a.s.Snakes {
+		snake := &a.s.Snakes[id]
 		snake.extrude()
-		if snake.Head() == a.pointItem {
+		if snake.Head() == a.s.PointItem {
 			a.setRandomPositionForPointItem()
 		} else {
 			snake.contractBody()
 		}
 
-		for other_id, other_snake := range a.snakes {
+		for other_id, other_snake := range a.s.Snakes {
 			if inSequence(snake.Head(), other_snake.Segments) {
 				if id != other_id {
 					a.endGame()
@@ -188,36 +188,36 @@ func (a *arena) Tick() {
 }
 
 func isOpposingDirections(h1, h2 Direction) bool {
-	if (h1 == EAST && h2 == WEST) {
+	if h1 == EAST && h2 == WEST {
 		return true
 	}
-	if (h1 == WEST && h2 == EAST) {
+	if h1 == WEST && h2 == EAST {
 		return true
 	}
-	if (h1 == NORTH && h2 == SOUTH) {
+	if h1 == NORTH && h2 == SOUTH {
 		return true
 	}
-	if (h1 == SOUTH && h2 == NORTH) {
+	if h1 == SOUTH && h2 == NORTH {
 		return true
 	}
 	return false
 }
 
 func (a *arena) SetSnakeHeading(snake int, h Direction) {
-	if isOpposingDirections(a.snakes[snake].Heading, h) {
+	if isOpposingDirections(a.s.Snakes[snake].Heading, h) {
 		return
 	}
-	a.snakes[snake].Heading = h
+	a.s.Snakes[snake].Heading = h
 }
 
 func (a arena) isValidPlacementPosition(p Position) bool {
-	if p.X < 0 || p.X >= a.size.X {
+	if p.X < 0 || p.X >= a.s.Size.X {
 		return false
 	}
-	if p.Y < 0 || p.Y >= a.size.Y {
+	if p.Y < 0 || p.Y >= a.s.Size.Y {
 		return false
 	}
-	for _, snake := range a.snakes {
+	for _, snake := range a.s.Snakes {
 		if inSequence(p, snake.Segments) {
 			return false
 		}
@@ -226,9 +226,9 @@ func (a arena) isValidPlacementPosition(p Position) bool {
 }
 
 func (a arena) getValidPositions() []Position {
-	valid_positions := make([]Position, 0, a.size.X*a.size.Y)
-	for i := 0; i < a.size.X; i++ {
-		for j := 0; j < a.size.Y; j++ {
+	valid_positions := make([]Position, 0, a.s.Size.X*a.s.Size.Y)
+	for i := 0; i < a.s.Size.X; i++ {
+		for j := 0; j < a.s.Size.Y; j++ {
 			p := Position{i, j}
 			if a.isValidPlacementPosition(p) {
 				valid_positions = append(valid_positions, p)
@@ -244,25 +244,25 @@ func (a *arena) setRandomPositionForPointItem() {
 	if len(valid_positions) == 0 {
 		a.endGame()
 	} else {
-		a.pointItem = valid_positions[rand.Intn(len(valid_positions))]
+		a.s.PointItem = valid_positions[rand.Intn(len(valid_positions))]
 	}
 }
 
-func (a* arena) AddSnake(x, y, size int, heading Direction) (int, error) {
+func (a *arena) AddSnake(x, y, size int, heading Direction) (int, error) {
 	if !a.isValidPlacementPosition(Position{x, y}) {
 		return -1, errors.New("Invalid position for snake head.")
 	}
 	new_snake := newSnake(x, y, size, heading)
-	for _, snake := range a.snakes {
+	for _, snake := range a.s.Snakes {
 		if inSequence(snake.Head(), new_snake.Segments) {
 			return -1, errors.New("Snake segment makes another snake head position invalid.")
 		}
 	}
-	a.snakes = append(a.snakes, new_snake)
-	return len(a.snakes) - 1, nil
+	a.s.Snakes = append(a.s.Snakes, new_snake)
+	return len(a.s.Snakes) - 1, nil
 }
 
-func newSnake(x, y ,size int, heading Direction) Snake {
+func newSnake(x, y, size int, heading Direction) Snake {
 	if heading != EAST {
 		panic("TODO: Other headings are not implemented.")
 	}
@@ -278,7 +278,7 @@ func newSnake(x, y ,size int, heading Direction) Snake {
 }
 
 func New(width, height int) Arena {
-	a := arena{size: Position{width, height}}
+	a := arena{s: State{Size: Position{width, height}}}
 	a.setRandomPositionForPointItem()
 	return &a
 }

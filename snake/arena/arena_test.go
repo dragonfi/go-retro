@@ -17,7 +17,7 @@ func makeArena(t *testing.T, width, height int) Arena {
 	}
 	type snakeParams struct {
 		x, y, size int
-		heading Direction
+		heading    Direction
 	}
 	addSnake(t, a, width/2, height/2, 5, EAST)
 	return a
@@ -182,32 +182,33 @@ func TestSnakeMovementForTwoSnakes(t *testing.T) {
 	testSnakeMovement(t, a, SOUTH, NORTH)
 }
 
-func TestState(t *testing.T) {
-	a := makeArena(t, 40, 20).(*arena)
-	s := a.State()
-	if s.GameIsOver != a.gameIsOver {
+func TestStateCopy(t *testing.T) {
+	a := makeArena(t, 40, 20)
+	s1 := a.State()
+	s2 := s1.Copy()
+	if s1.GameIsOver != s2.GameIsOver {
 		t.Fail()
 	}
-	if s.PointItem != a.pointItem {
+	if s1.PointItem != s2.PointItem {
 		t.Fail()
 	}
-	for i, state_snake := range s.Snakes {
-		arena_snake := a.snakes[i]
-		if state_snake.Heading != arena_snake.Heading {
+	for i, s1snake := range s1.Snakes {
+		s2snake := s2.Snakes[i]
+		if s1snake.Heading != s2snake.Heading {
 			t.Fail()
 		}
-		for j := range state_snake.Segments {
-			if state_snake.Segments[j] != arena_snake.Segments[j] {
+		for j := range s1snake.Segments {
+			if s1snake.Segments[j] != s2snake.Segments[j] {
 				t.Fail()
 			}
 		}
 	}
-	if s.Size != a.size {
+	if s1.Size != s2.Size {
 		t.Fail()
 	}
-	s.Snakes[0].Segments[0] = Position{30, 30}
-	if s.Snakes[0].Segments[0] == a.snakes[0].Segments[0] {
-		t.Error("Returned state should not be able to modify original data.")
+	s1.Snakes[0].Segments[0] = Position{30, 30}
+	if s1.Snakes[0].Segments[0] == s2.Snakes[0].Segments[0] {
+		t.Error("Copied state should not be able to modify original data.")
 	}
 }
 
@@ -215,7 +216,7 @@ func TestSnakeMovementEatPointItemAndGrow(t *testing.T) {
 	a := makeArena(t, 40, 20)
 	initial := a.State().Snakes[0]
 
-	a.(*arena).pointItem = Position{initial.Head().X + 1, initial.Head().Y}
+	a.(*arena).s.PointItem = Position{initial.Head().X + 1, initial.Head().Y}
 	a.SetSnakeHeading(0, EAST)
 
 	a.Tick()
@@ -235,8 +236,8 @@ func TestSnakeMovementEatPointItemAndGrow(t *testing.T) {
 
 func TestDeclareGameOverWhenCannotPlaceMorePointItems(t *testing.T) {
 	a := makeArena(t, 2, 1).(*arena)
-	h := a.snakes[0].Head()
-	a.pointItem = Position{h.X + 1, h.Y}
+	h := a.s.Snakes[0].Head()
+	a.s.PointItem = Position{h.X + 1, h.Y}
 	a.Tick()
 	state := a.State()
 	if !state.GameIsOver {
@@ -413,7 +414,7 @@ func TestNewSnakeHeadCannotBeAtInvalidPosition(t *testing.T) {
 	}
 }
 
-func TestReverseMotionSuicideInvalid (t *testing.T) {
+func TestReverseMotionSuicideIsInvalid(t *testing.T) {
 	a := makeArena(t, 40, 20)
 	testSnakeMovement(t, a, EAST)
 	a.SetSnakeHeading(0, WEST)
@@ -435,4 +436,3 @@ func TestReverseMotionSuicideInvalid (t *testing.T) {
 	a.Tick()
 	testSnakeMovement(t, a, SOUTH)
 }
-
