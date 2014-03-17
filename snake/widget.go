@@ -77,8 +77,12 @@ func (w ArenaWidget) drawSnake(color termbox.Attribute, snake arena.Snake) {
 		if i == 0 {
 			char = 'O'
 		}
+		if !snake.IsAlive {
+			char = 'X'
+		}
 		w.setCell(p.X, p.Y, char, color, 0)
 	}
+
 }
 
 func (w ArenaWidget) drawPointItem() {
