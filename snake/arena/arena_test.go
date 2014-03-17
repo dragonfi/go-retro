@@ -68,8 +68,9 @@ func checkSnakeMovementHead(t *testing.T, initial Snake, direction Direction, s 
 	case SOUTH:
 		dy = 1
 	}
-	if h.X != initial_head.X+dx || h.Y != initial_head.Y+dy {
-		t.Error("Wrong position for snake head:", h.X, h.Y, "Expected:", initial_head.X+dx, initial_head.Y+dy)
+	expected := Position{initial_head.X + dx, initial_head.Y + dy}
+	if h.X != expected.X || h.Y != expected.Y {
+		t.Error("Wrong position for snake head:", h.X, h.Y, "Expected:", expected.X, expected.Y)
 		t.Error("Note: Direction:", direction)
 	}
 }
@@ -80,6 +81,10 @@ func checkSnakeMovementBody(t *testing.T, initial, s Snake) {
 			t.Error("Wrong segment at position:", i, "segment:", s.Segments[i], "expected:", initial.Segments[i-1])
 		}
 	}
+}
+
+func checkDeadSnakeStaysPut(t *testing.T, initial, s Snake) {
+	s.Equal(initial)
 }
 
 func moveSnakes(t *testing.T, a Arena, directions ...Direction) {
@@ -103,8 +108,12 @@ func moveSnakes(t *testing.T, a Arena, directions ...Direction) {
 		if s.Length() != initial.Length() {
 			t.Error("Wrong snake size: Expected:", initial.Length(), "Got:", s.Length())
 		}
-		checkSnakeMovementHead(t, initial, direction, s)
-		checkSnakeMovementBody(t, initial, s)
+		if initial.IsAlive {
+			checkSnakeMovementHead(t, initial, direction, s)
+			checkSnakeMovementBody(t, initial, s)
+		} else {
+			checkDeadSnakeStaysPut(t, initial, s)
+		}
 	}
 }
 
@@ -435,4 +444,19 @@ func TestReverseMotionSuicideIsInvalid(t *testing.T) {
 	a.SetSnakeHeading(0, NORTH)
 	a.Tick()
 	testSnakeMovement(t, a, SOUTH)
+}
+
+func TestGameIsOnlyOverWhenAllSnakeDies(t *testing.T) {
+	a := makeArena(t, 40, 20)
+	addSnake(t, a, 30, 15, 5, EAST)
+	testSnakeMovement(t, a, EAST, EAST)
+	testSnakeMovement(t, a, NORTH, NORTH)
+	testSnakeMovement(t, a, NORTH, WEST)
+	testSnakeMovement(t, a, WEST, SOUTH)
+	testSnakeMovement(t, a, SOUTH)
+	testSnakeMovementCausesGameOver(t, a, EAST)
+	h := a.State().Snakes[1].Head()
+	if h.X != 30 || h.Y != 15 {
+		t.Error("Dead snakes should not move.")
+	}
 }
