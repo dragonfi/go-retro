@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/nsf/termbox-go"
 	"github.com/dragonfi/go-retro/snake/arena"
+	"github.com/nsf/termbox-go"
 )
 
 func main() {

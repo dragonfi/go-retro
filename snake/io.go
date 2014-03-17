@@ -1,9 +1,9 @@
 package main
 
 import (
-	"time"
-	"math/rand"
 	"github.com/nsf/termbox-go"
+	"math/rand"
+	"time"
 )
 
 func putString(x, y int, s string) {
@@ -11,7 +11,6 @@ func putString(x, y int, s string) {
 		termbox.SetCell(x+i, y, r, 0, 0)
 	}
 }
-
 
 func Init() (x, y int) {
 	rand.Seed(time.Now().UnixNano())

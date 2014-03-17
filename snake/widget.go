@@ -2,10 +2,27 @@ package main
 
 import (
 	"fmt"
-	"time"
-	"github.com/nsf/termbox-go"
 	"github.com/dragonfi/go-retro/snake/arena"
+	"github.com/nsf/termbox-go"
+	"time"
 )
+
+var colors = map[string]termbox.Attribute{
+	"snake1":    termbox.ColorGreen | termbox.AttrBold,
+	"snake2":    termbox.ColorYellow | termbox.AttrBold,
+	"pointItem": termbox.ColorCyan | termbox.AttrBold,
+}
+
+func getSnakeColor(i int) termbox.Attribute {
+	key := ""
+	switch i {
+	case 0:
+		key = "snake1"
+	case 1:
+		key = "snake2"
+	}
+	return colors[key]
+}
 
 type Position struct {
 	X, Y int
@@ -50,19 +67,23 @@ func (w ArenaWidget) drawBorder() {
 }
 
 func (w ArenaWidget) drawSnakes() {
-	for _, snake := range w.state.Snakes {
-		w.drawSnake(snake)
+	for i, snake := range w.state.Snakes {
+		w.drawSnake(getSnakeColor(i), snake)
 	}
 }
-func (w ArenaWidget) drawSnake(snake arena.Snake) {
-	for _, p := range snake.Segments {
-		w.setCell(p.X, p.Y, '#', 0, 0)
+func (w ArenaWidget) drawSnake(color termbox.Attribute, snake arena.Snake) {
+	for i, p := range snake.Segments {
+		char := '#'
+		if i == 0 {
+			char = 'O'
+		}
+		w.setCell(p.X, p.Y, char, color, 0)
 	}
 }
 
 func (w ArenaWidget) drawPointItem() {
 	p := w.state.PointItem
-	w.setCell(p.X, p.Y, '*', 0, 0)
+	w.setCell(p.X, p.Y, '*', colors["pointItem"], 0)
 }
 
 func (w ArenaWidget) putGameOverText() {
