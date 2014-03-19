@@ -29,6 +29,16 @@ type Position struct {
 	X, Y int
 }
 
+func (p Position) Equal(other Position) bool {
+	if p.X != other.X {
+		return false
+	}
+	if p.Y != other.Y {
+		return false
+	}
+	return true
+}
+
 type State struct {
 	Size       Position
 	Snakes     []Snake
