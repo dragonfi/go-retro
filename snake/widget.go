@@ -10,6 +10,8 @@ import (
 var colors = map[string]termbox.Attribute{
 	"snake1":    termbox.ColorGreen | termbox.AttrBold,
 	"snake2":    termbox.ColorYellow | termbox.AttrBold,
+	"snake3":    termbox.ColorRed | termbox.AttrBold,
+	"snake4":    termbox.ColorBlue | termbox.AttrBold,
 	"pointItem": termbox.ColorCyan | termbox.AttrBold,
 }
 
@@ -20,6 +22,10 @@ func getSnakeColor(i int) termbox.Attribute {
 		key = "snake1"
 	case 1:
 		key = "snake2"
+	case 2:
+		key = "snake3"
+	case 3:
+		key = "snake4"
 	}
 	return colors[key]
 }
@@ -34,6 +40,7 @@ type ArenaWidget struct {
 	size    Position
 	state   arena.State
 	running bool
+	players int
 	KeyMap  KeyMap
 	RuneMap RuneMap
 }
@@ -119,8 +126,27 @@ func (w ArenaWidget) Draw() {
 
 func (w *ArenaWidget) ResetArena() {
 	w.arena = arena.New(w.size.X, w.size.Y)
-	w.arena.AddSnake(w.size.X/2, w.size.Y/2, 5, arena.EAST)
-	w.arena.AddSnake(w.size.X/3, w.size.Y/3, 5, arena.EAST)
+	one := arena.Position{w.size.X/3, w.size.Y/3}
+
+	w.setDefaultMap()
+
+	w.addP1Map()
+	w.arena.AddSnake(one.X, one.Y, 5, arena.EAST)
+
+	if w.players >= 2 {
+		w.addP2Map()
+		w.arena.AddSnake(one.X, one.Y*2, 5, arena.EAST)
+	}
+
+	if w.players >= 3 {
+		w.addP3Map()
+		w.arena.AddSnake(one.X*2, one.Y, 5, arena.EAST)
+	}
+
+	if w.players >= 4 {
+		w.addP4Map()
+		w.arena.AddSnake(one.X*2, one.Y*2, 5, arena.EAST)
+	}
 }
 
 func (w *ArenaWidget) Run() {
@@ -145,8 +171,59 @@ func (w *ArenaWidget) Exit() {
 	w.running = false
 }
 
-func NewArenaWidget(ox, oy, x, y int) ArenaWidget {
-	w := ArenaWidget{offset: Position{ox, oy}, size: Position{x, y}}
+func NewArenaWidget(ox, oy, x, y, players int) *ArenaWidget {
+	if x < 0 || y < 0 {
+		panic("Arena size must be positive.")
+	}
+	if players < 1 || players > 4 {
+		panic("Number of players must be between 1 and 4.")
+	}
+
+	w := ArenaWidget{offset: Position{ox, oy}, size: Position{x, y}, players: players}
 	w.ResetArena()
-	return w
+	return &w
+}
+
+func (w *ArenaWidget) setDefaultMap() {
+	w.KeyMap = KeyMap{}
+	w.RuneMap = RuneMap{}
+
+	w.KeyMap[termbox.KeyEsc]   = func() { w.Exit() }
+	w.KeyMap[termbox.KeyEnter] = func() { w.ResetArena() }
+
+}
+
+func (w *ArenaWidget) addP1Map() {
+	w.KeyMap[termbox.KeyArrowRight] = func() { w.SetSnakeHeading(0, arena.EAST) }
+	w.KeyMap[termbox.KeyArrowUp]    = func() { w.SetSnakeHeading(0, arena.NORTH) }
+	w.KeyMap[termbox.KeyArrowLeft]  = func() { w.SetSnakeHeading(0, arena.WEST) }
+	w.KeyMap[termbox.KeyArrowDown]  = func() { w.SetSnakeHeading(0, arena.SOUTH) }
+}
+
+func (w *ArenaWidget) addP2Map() {
+	w.RuneMap['D'] = func() { w.SetSnakeHeading(1, arena.EAST) }
+	w.RuneMap['W'] = func() { w.SetSnakeHeading(1, arena.NORTH) }
+	w.RuneMap['A'] = func() { w.SetSnakeHeading(1, arena.WEST) }
+	w.RuneMap['S'] = func() { w.SetSnakeHeading(1, arena.SOUTH) }
+	w.RuneMap['d'] = func() { w.SetSnakeHeading(1, arena.EAST) }
+	w.RuneMap['w'] = func() { w.SetSnakeHeading(1, arena.NORTH) }
+	w.RuneMap['a'] = func() { w.SetSnakeHeading(1, arena.WEST) }
+	w.RuneMap['s'] = func() { w.SetSnakeHeading(1, arena.SOUTH) }
+}
+
+func (w *ArenaWidget) addP3Map() {
+	w.RuneMap['L'] = func() { w.SetSnakeHeading(2, arena.EAST) }
+	w.RuneMap['I'] = func() { w.SetSnakeHeading(2, arena.NORTH) }
+	w.RuneMap['J'] = func() { w.SetSnakeHeading(2, arena.WEST) }
+	w.RuneMap['K'] = func() { w.SetSnakeHeading(2, arena.SOUTH) }
+	w.RuneMap['l'] = func() { w.SetSnakeHeading(2, arena.EAST) }
+	w.RuneMap['i'] = func() { w.SetSnakeHeading(2, arena.NORTH) }
+	w.RuneMap['j'] = func() { w.SetSnakeHeading(2, arena.WEST) }
+	w.RuneMap['k'] = func() { w.SetSnakeHeading(2, arena.SOUTH) }
+}
+func (w *ArenaWidget) addP4Map() {
+	w.RuneMap['6'] = func() { w.SetSnakeHeading(3, arena.EAST) }
+	w.RuneMap['8'] = func() { w.SetSnakeHeading(3, arena.NORTH) }
+	w.RuneMap['4'] = func() { w.SetSnakeHeading(3, arena.WEST) }
+	w.RuneMap['2'] = func() { w.SetSnakeHeading(3, arena.SOUTH) }
 }
