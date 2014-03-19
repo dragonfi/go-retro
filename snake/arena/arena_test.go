@@ -15,10 +15,6 @@ func makeArena(t *testing.T, width, height int) Arena {
 	if state.Size.X != width || state.Size.Y != height {
 		t.Error("Wrong width or height. Expected:", width, height, "Got:", state.Size.X, state.Size.Y)
 	}
-	type snakeParams struct {
-		x, y, size int
-		heading    Direction
-	}
 	addSnake(t, a, width/2, height/2, 5, EAST)
 	return a
 }
