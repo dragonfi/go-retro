@@ -126,7 +126,7 @@ func (w ArenaWidget) Draw() {
 
 func (w *ArenaWidget) ResetArena() {
 	w.arena = arena.New(w.size.X, w.size.Y)
-	one := arena.Position{w.size.X/3, w.size.Y/3}
+	one := arena.Position{w.size.X / 3, w.size.Y / 3}
 
 	w.setDefaultMap()
 
@@ -188,16 +188,16 @@ func (w *ArenaWidget) setDefaultMap() {
 	w.KeyMap = KeyMap{}
 	w.RuneMap = RuneMap{}
 
-	w.KeyMap[termbox.KeyEsc]   = func() { w.Exit() }
+	w.KeyMap[termbox.KeyEsc] = func() { w.Exit() }
 	w.KeyMap[termbox.KeyEnter] = func() { w.ResetArena() }
 
 }
 
 func (w *ArenaWidget) addP1Map() {
 	w.KeyMap[termbox.KeyArrowRight] = func() { w.SetSnakeHeading(0, arena.EAST) }
-	w.KeyMap[termbox.KeyArrowUp]    = func() { w.SetSnakeHeading(0, arena.NORTH) }
-	w.KeyMap[termbox.KeyArrowLeft]  = func() { w.SetSnakeHeading(0, arena.WEST) }
-	w.KeyMap[termbox.KeyArrowDown]  = func() { w.SetSnakeHeading(0, arena.SOUTH) }
+	w.KeyMap[termbox.KeyArrowUp] = func() { w.SetSnakeHeading(0, arena.NORTH) }
+	w.KeyMap[termbox.KeyArrowLeft] = func() { w.SetSnakeHeading(0, arena.WEST) }
+	w.KeyMap[termbox.KeyArrowDown] = func() { w.SetSnakeHeading(0, arena.SOUTH) }
 }
 
 func (w *ArenaWidget) addP2Map() {

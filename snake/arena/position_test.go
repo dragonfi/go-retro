@@ -10,12 +10,12 @@ var positions = []arena.Position{
 }
 
 var differing_positions = [][2]arena.Position{
-		{{10, 20}, {10, 21}},
-		{{-3, 1}, {-4, 1}},
-		{{3, -1}, {15, 24}},
-		{{-10, -10}, {10, 10}},
-		{{8, 2}, {2, 8}},
-	}
+	{{10, 20}, {10, 21}},
+	{{-3, 1}, {-4, 1}},
+	{{3, -1}, {15, 24}},
+	{{-10, -10}, {10, 10}},
+	{{8, 2}, {2, 8}},
+}
 
 func TestPositionsAreEqual(t *testing.T) {
 	for _, p1 := range positions {
@@ -41,4 +41,3 @@ func assertPositionsDiffer(t *testing.T, p1, p2 arena.Position) {
 		t.Error("Positions should not be equal:", p1, "\t!=", p2)
 	}
 }
-
