@@ -138,7 +138,7 @@ func (a *arena) AddSnake(x, y, size int, heading Direction) (int, error) {
 
 func New(width, height int) Arena {
 	if width < 0 || height < 0 {
-		panic("Arena sizes must be positive negative.")
+		panic("Arena width and height must be positive.")
 	}
 	a := arena{s: State{Size: Position{width, height}}}
 	a.setRandomPositionForPointItem()
